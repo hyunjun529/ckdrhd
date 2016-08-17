@@ -1,0 +1,256 @@
+#include "NXCDefs.h"
+#define Fwd_lf(N) OnFwd(OUT_A, N);
+#define Fwd_rt(N) OnFwd(OUT_B, N);
+#define Rev_lf(N) OnRev(OUT_A, N);
+#define Rev_rt(N) OnRev(OUT_B, N);
+#define Stop_both OnRev(OUT_AB, 0);
+#define SP 10
+
+#define BL_H 40
+#define BL_L 20
+
+#define GR_H 52
+#define GR_L 45
+
+#define OL_H 40
+#define OL_L 20
+
+/*
+매크로에 관해서
+
+Fwd_lf, Fwd_rt : 좌측, 우측 바퀴가 정회전하는 함수 축약
+Rev_lf, Rev_rt : 좌측, 우측 바퀴가 역회전하는 함수 축약
+Stop_both : 양 바퀴를 멈추는 함수 축약
+
+SP : 속도 설정값, speed 변수와 곱해서 사용, 속도 일괄 제어 용도
+
+BL_H, BL_L : 검은 선의 빛 센서 수용치
+GR_H, GR_L : 연두 선의 빛 센서 수용치
+OL_H, OL_L : 경기장 외곽선의 빛 센서 수용치
+*/
+
+bool light_lf; // 라인 트레이싱에서 좌측 빛 센서 체크
+bool light_rt; // 라인 트레이싱에서 우측 빛 센서 체크
+bool tch;      // 공을 잡는 기능의 중앙 터치 센서 체크
+bool outline;  // 라인 트레이싱 중 경기장 외곽 체크
+int speed;     // 라인 트레이싱 속도 조절 값
+bool dirt;     // 방향(direction) 체크
+bool cnt;      // 1, 2번 행동 체크, 승부차기에선 무조건 false
+
+task motor(){
+  while(1){
+
+    /*
+      라인 트레이싱 중 외곽선을 밟은 경우 180도 회전하는 부분
+      dirt에 따라서 회전 방향이 바뀐다.
+    */
+    if(outline){
+      if(!dirt){
+        Fwd_lf(80);
+        Rev_rt(80);
+      }
+      else{
+        Rev_lf(80);
+        Fwd_rt(80);
+      }
+      Wait(750);
+      outline=false;
+      dirt = (dirt)?(false):(true);
+    }
+    
+    /*
+      공을 찾는 부분,
+      라인 트레이싱
+    */
+    if(tch){
+      if(!light_lf && !light_rt){
+        //Rev_lf(SP * speed);
+        Fwd_lf(SP * speed);
+        Fwd_rt(SP * speed);
+      }
+      else if(light_lf && !light_rt){
+        Fwd_lf(SP * speed);
+        Fwd_rt(0);
+      }
+      else if(!light_lf && light_rt){
+        Fwd_lf(0);
+        Fwd_rt(SP * speed);
+      }
+      else{
+        Fwd_lf(SP * speed);
+        Fwd_rt(SP * speed);
+      }
+    }
+    /*
+      공을 잡은 경우 행동
+      1. 먼저 공을 안정적으로 잡기 위해서 서서히 감속한다
+      2-1. cnt가 false인 경우 공을 골대를 향해 던진다
+      2-2. cnt가 true인 경우 공을 몰고 골대로 향한다
+    */
+    else{
+      // 공을 안정적으로 잡기 위한 감속 부분
+      Fwd_lf(60);
+      Fwd_rt(60);
+      Wait(300);
+
+      Fwd_lf(40);
+      Fwd_rt(40);
+      Wait(300);
+
+      Fwd_lf(20);
+      Fwd_rt(20);
+      Wait(300);
+
+      Fwd_lf(0);
+      Fwd_rt(0);
+      Wait(100);
+      
+      // 공을 상대 골대로 물고 가는 부분
+      if(cnt){
+        // 방향에 따라서 회전 방향 바뀜
+        if(!dirt){
+          Fwd_lf(50);
+          Rev_rt(50);
+          Wait(900);
+        }
+        else{
+          Rev_lf(50);
+          Fwd_rt(50);
+          Wait(800);
+        }
+        
+        // 마지막 검은 선까지 직진
+        Fwd_lf(100);
+        Fwd_rt(100);
+        Wait(3200);
+        PlayFile("Woops.rso");
+
+        // 마지막 검은 선에서  빛센서를 체크
+        // 이를 통해서 골대로 향하는 경로를 보정
+        while(1){
+          if(SENSOR_1 <= BL_H){
+            Fwd_lf(95);
+            Fwd_rt(100);
+            Wait(5100);
+            break;
+          }
+          if(SENSOR_4 <= BL_H){
+            Fwd_lf(100);
+            Fwd_rt(90);
+            Wait(5100);
+            break;
+          }
+        }
+
+        // 골을 넣고 뒤로 물러남
+        Rev_lf(100);
+        Rev_rt(100);
+        Wait(700);
+        
+        cnt = false;
+      }
+      
+      // 공을 상대 골대를 향해 쏘는 부분
+      else{
+        // 방향에 따라서 회전 방향 바뀜
+        if(!dirt){
+          Fwd_lf(100);
+          Rev_rt(100);
+          Wait(1200);
+        }
+        else{
+          Rev_lf(100);
+          Fwd_rt(100);
+          Wait(1200);
+        }
+
+        // 쏘고난 후 모든 값들 초기화
+        // 라인 트레이싱으로 복귀
+        tch = true;
+        cnt = true;
+      }
+    }
+
+  }
+}
+
+/*
+  빛 센서를 범용적으로 체크하는 부분
+  라인 트레이싱, 경기장 외곽선을 체크한다.
+*/
+task light(){
+  while(1){
+    // 라인 트레이싱에서 사용함
+    // 검은색 선을 검출
+    if(SENSOR_1 <= BL_H){
+      light_lf = false;
+    }
+    else{
+      light_lf = true;
+    }
+    if(SENSOR_4 <= BL_H){
+      light_rt = false;
+    }
+    else{
+      light_rt = true;
+    }
+    
+    // 외곽선을 체크, 외곽선은 양 센서가 모두 잡혀야 함
+    if(SENSOR_1 <= OL_H && SENSOR_1 >= OL_L
+    && SENSOR_4 <= OL_H && SENSOR_4 >= OL_L){
+       outline = true;
+    }
+  }
+}
+
+/*
+  공을 잡는지 확인하는 터치센서
+  tch값은 공을 잡고 정해진 행동이 끝나야 true가 됨
+*/
+task touch(){
+  while(1){
+    if(SENSOR_3 == 1){
+      tch = false;
+    }
+    else{
+    }
+  }
+}
+
+task main(){
+  SetSensorLight(IN_1);    // 좌측 빛 센서
+  SetSensorLight(IN_4);    // 우측 빛 센서
+  SetSensorTouch(IN_3);    // 터치 센서
+
+  /*
+    센서값, 설정값 전부 초기화
+    cnt가 true면 승부차기 로직
+    동일 소스에서 변수만 바꾸면 경기/승부차기 교체 가능
+  */
+  light_lf = true;
+  light_rt = true;
+  tch = true;
+  outline = false;
+  speed = 9;
+  dirt = true;
+  cnt = false;
+
+  /*
+    처음 출발하면 정해진 위치로 이동 후 회전
+    연두색 선의 경우 빛 센서 정확도가 낮고,
+    경기장 내 교차점 처리가 부정확했던 관계로
+    임시로 해당 로직 대체했음.
+  */
+  Fwd_lf(100);
+  Fwd_rt(100);
+  Wait(2200);
+
+  Fwd_lf(100);
+  Rev_rt(100);
+  Wait(290);
+
+  // 주요 알고리즘 시작
+  Precedes(motor);
+  Precedes(light);
+  Precedes(touch);
+}

@@ -1,0 +1,103 @@
+#include "NXCDefs.h"
+#define Fwd_lf(N) OnFwd(OUT_A, N);
+#define Fwd_rt(N) OnFwd(OUT_B, N);
+#define Rev_lf(N) OnRev(OUT_A, N);
+#define Rev_rt(N) OnRev(OUT_B, N);
+#define SP 11
+/*
+ 모터 회전 제어를 간소화하는 매크로
+ SP는 변속되는 속도값의 기본치
+*/
+
+bool light_lf;     // 좌측 빛 센서 측정값
+bool light_rt;     // 우측 빛 센서 측정값
+int flag_speed;    // 속도 조절용 플래그
+int speed;         // 변속되는 속도 값 배율
+int last_light_lf; // 마지막으로 측정된 좌측 빛센서값 저장용
+int last_light_rt; // 마지막으로 측정된 우측 빛센서값 저장용
+
+task motor(){
+  while(1){
+    if(!light_lf && !light_rt){     // 양쪽 다 라인에 닿음
+      Rev_lf(SP * speed);           // 양쪽 바퀴 동작
+      Fwd_rt(SP * speed);
+    }
+    else if(light_lf && !light_rt){ // 우측만 라인에 닿음
+      Fwd_lf(SP * speed);           // 좌측 바퀴만 동작
+      Fwd_rt(0);
+    }
+    else if(!light_lf && light_rt){ // 좌측만 라인에 닿음
+      Fwd_rt(SP * speed);           // 우측 바퀴만 동작
+      Fwd_lf(0);
+    }
+    else{                           // 양쪽 다 라인에 닿지 않음
+      Fwd_lf(SP * speed);           // 양쪽 바퀴 동작
+      Fwd_rt(SP * speed);
+    }
+  }
+}
+
+task light(){
+  while(1){
+    if(SENSOR_1 <= 45){  // 좌측 센서가 45 이하이면 라인에 닿음으로 체크
+      light_lf = false;
+    }
+    else{
+      light_lf = true;
+    }
+    if(SENSOR_4 <= 45){  // 우측 센서가 45 이하이면 라인에 닿음으로 체크
+      light_rt = false;
+    }
+    else{
+      light_rt = true;
+    }
+  }
+}
+
+task change(){
+  while(1) {
+    if(SENSOR_1 < 50) last_light_lf = SENSOR_1; // 50 이하의 값만 검출
+    if(SENSOR_4 < 50) last_light_rt = SENSOR_4; // 50 이상은 흰색 배경
+
+    if(flag_speed == 1 // 첫 변속 구간
+      &&(
+         last_light_lf <= 45 && last_light_lf >= 40
+      && last_light_rt <= 45 && last_light_rt >= 40
+      )) {
+      PlayFile("Woops.rso"); // 변속 확인용 소리 재생
+      flag_speed = 2; // 한 번 변속 했음을 기록
+      speed = 6;      // 속도 배율은 6
+    }
+    else if(flag_speed == 2 // 둘째 변속 구간
+      &&(
+         last_light_lf <= 35 && last_light_lf >= 15
+      || last_light_rt <= 35 && last_light_rt >= 15
+      )) {
+      PlayFile("Woops.rso"); // 변속 확인용 소리 재생
+      PlayFile("Woops.rso"); // 변속 확인용 소리 재생
+      flag_speed = 3; // 두 번 변속 했음을 기록
+      speed = 5;      // 속도 배율은 5
+    }
+  }
+}
+
+task main(){
+  // 이하 센서 초기화
+  SetSensorLight(IN_1);    // 1번 빛센서
+  SetSensorLight(IN_4);    // 4번 빛센서
+  SetSensorTouch(IN_3);    // 3번 터치센서
+  SetSensorLowspeed(IN_2); // 2번 초음파센서
+
+  // 이하 측정값 초기화
+  light_lf = true;
+  light_rt = true;
+  flag_speed = 1;
+  speed = 7;
+  last_light_lf = 100;
+  last_light_rt = 100;
+
+  // 이하 프로세서 초기화
+  Precedes(motor);
+  Precedes(light);
+  Precedes(change);
+}
