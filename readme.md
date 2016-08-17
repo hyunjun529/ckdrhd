@@ -1,4 +1,4 @@
-# ckdrhd(창공)
+# ckdrhd[창공]
 
 동국대 창의적공학설계 마인드스톰 샘플 코드, 삽질기
 
@@ -15,16 +15,16 @@
 1. 텍스트에디터는 다른거 쓰고 Bricx Command Center로는 컴파일하고 실행만 하는걸 추천합니다.
 2. 베터리 상태, 경기장 조명, 조립 상태 등에 쉽게 대응할 수 있게 코드를 짭시다.
 3. 상태는 되도록 전역변수로 관리하고 모터를 동작하는 것과 센서로 값을 읽는 것은 최대한 함수를 분리해서... 이건 나중에 배울꺼에요.
-4. (공식 문서)[http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/index.html]를 보면 좋습니다.
-5. 더 많은 예시는 (공식 예제)[http://bricxcc.sourceforge.net/nbc/nxcsamples/]에서 봅시다.
+4. [공식 문서](http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/index.html)를 보면 좋습니다.
+5. 더 많은 예시는 [공식 예제](http://bricxcc.sourceforge.net/nbc/nxcsamples/)에서 봅시다.
 
 ### Precedes & task
 
-(Precedes)[http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/group___command_module_functions_ga59bc18d456217192cffcfb1d0bef3863.html#ga59bc18d456217192cffcfb1d0bef3863]는 쓰레드로 실행합니다. (task)[http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/task.html]는 while(1) 걸어서 계속 실행되게 만들어 주면 됩니다. 동시에 실행되니까 한 task에 모든 코드를 넣으려고 하지 마세요.
+[Precedes](http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/group___command_module_functions_ga59bc18d456217192cffcfb1d0bef3863.html#ga59bc18d456217192cffcfb1d0bef3863)는 쓰레드로 실행합니다. [task](http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/task.html)는 while[1] 걸어서 계속 실행되게 만들어 주면 됩니다. 동시에 실행되니까 한 task에 모든 코드를 넣으려고 하지 마세요.
 
 ### 소리 재생에 관해서
 
-(PlayFile)[http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/group___sound_module_functions_ga44cdcc978853d615cc6fc27703e8d0cf.html#ga44cdcc978853d615cc6fc27703e8d0cf]로 소리 재생할 수 있긴 한데, 이거 파일을 어떻게 NXT에 넣는지 모르겠습니다. 근데 모든 기기에 공통으로 Woops.rso가 들어있었던거 같으니 그거 쓰시면 됩니다. 소리가 이상하게 재생되면 혹시 한 음성파일이 재생되는 동안 중복으로 재생하고 있는지 확인해보세요. (Wait)[http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/group___command_module_functions_ga01e64d2250db0e5b41486e316228983f.html#ga01e64d2250db0e5b41486e316228983f]를 넣으면 해결할 수 있는 부분도 있습니다.
+[PlayFile](http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/group___sound_module_functions_ga44cdcc978853d615cc6fc27703e8d0cf.html#ga44cdcc978853d615cc6fc27703e8d0cf)로 소리 재생할 수 있긴 한데, 이거 파일을 어떻게 NXT에 넣는지 모르겠습니다. 근데 모든 기기에 공통으로 Woops.rso가 들어있었던거 같으니 그거 쓰시면 됩니다. 소리가 이상하게 재생되면 혹시 한 음성파일이 재생되는 동안 중복으로 재생하고 있는지 확인해보세요. [Wait](http://bricxcc.sourceforge.net/nbc/nxcdoc/nxcapi/group___command_module_functions_ga01e64d2250db0e5b41486e316228983f.html#ga01e64d2250db0e5b41486e316228983f)를 넣으면 해결할 수 있는 부분도 있습니다.
 
 ### 모터에 관해서
 
@@ -44,4 +44,4 @@
 
 ### 스마트폰 블루투스와 연결하는 것에 대해서
 
-(NXT Remote Control GitHub)[https://github.com/jfedor2/nxt-remote-control] 참고, 블루투스 값이 어떻게 전달되는지는 소스에 나와있으니 bluetoothState를 제어하면 될 꺼라고 예상만 해봅니다. 직접 해보진 않았고 하는걸 본 적은 있는데 그건 nxt 예제였던걸로 기억합니다.
+[NXT Remote Control GitHub](https://github.com/jfedor2/nxt-remote-control) 참고, 블루투스 값이 어떻게 전달되는지는 소스에 나와있으니 bluetoothState를 제어하면 될 꺼라고 예상만 해봅니다. 직접 해보진 않았고 하는걸 본 적은 있는데 그건 nxt 예제였던걸로 기억합니다.
